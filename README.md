@@ -1,6 +1,16 @@
 # skillspath
 Education Platform
 
+Home: select a student from the dropdown or search courses by skill.
+
+Student Dashboard: view enrolled courses, skills, and recommendations.
+
+Course Detail: see course info, required skills, prerequisites, and instructors.
+
+Admin Seed: /admin/seed/ – reload sample data.
+
+
+
 # SkillPath – Course Recommendation with Graph Database
 
 A Django app that recommends courses to students based on their skills and prerequisites, using CognoDB (Neo4j) as the graph database.
