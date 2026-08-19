@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Find Your Learning Path</h1>
+    <p class="text-lg text-gray-600 mb-8">Discover courses tailored to your skills and goals.</p>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <label for="student-select" class="block text-sm font-medium text-gray-700 mb-2">Select a student to explore:</label>
+        <select id="student-select" onchange="window.location.href='/student/'+this.value" class="w-full max-w-sm border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="">— Choose a student —</option>
+        </select>
+        <div id="loading-students" class="mt-2 text-gray-500 text-sm">Loading students...</div>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+        <h2 class="text-xl font-semibold mb-4">Search courses by skill</h2>
+        <form action="{% url 'search_courses' %}" method="get" class="flex flex-col sm:flex-row gap-2">
+            <input type="text" name="skill" placeholder="e.g., Python, SQL" required class="flex-grow border border-gray-300 rounded-md py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button type="submit" class="bg-indigo-600 text-white py-2 px-6 rounded-md hover:bg-indigo-700 transition-colors">Search</button>
+        </form>
+    </div>
+
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold mb-4">Why a Graph Database?</h2>
+        <ul class="space-y-3 text-gray-700">
+            <li class="flex items-start"><span class="mr-2">🏗️</span> <strong>Multi-hop Traversals:</strong> Find courses you're eligible for based on skills and prerequisites.</li>
+            <li class="flex items-start"><span class="mr-2">🔗</span> <strong>Relationship-driven:</strong> Understand how students, courses, skills, and instructors connect.</li>
+            <li class="flex items-start"><span class="mr-2">📈</span> <strong>Smart Recommendations:</strong> Discover trending courses among peers with similar skill profiles.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const select = document.getElementById('student-select');
+        const loading = document.getElementById('loading-students');
+        fetch('/api/students/')
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                data.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.name;
+                    option.textContent = student.name + ' (' + student.email + ')';
+                    select.appendChild(option);
+                });
+            })
+            .catch(err => {
+                loading.textContent = 'Error loading students. Please refresh.';
+                loading.className = 'text-red-500 text-sm';
+            });
+    });
+</script>
+{% endblock %}

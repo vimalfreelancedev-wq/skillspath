@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">{{ course_title }}</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div id="course-info" class="bg-white p-6 rounded-lg shadow-md card-hover">
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Course Details</h2>
+        <div id="info-content" class="text-gray-700">Loading...</div>
+    </div>
+
+    <div id="course-skills" class="bg-white p-6 rounded-lg shadow-md card-hover">
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Required Skills</h2>
+        <div id="skills-content" class="text-gray-700">Loading...</div>
+    </div>
+
+    <div id="course-prerequisites" class="bg-white p-6 rounded-lg shadow-md card-hover">
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Prerequisites</h2>
+        <div id="prereq-content" class="text-gray-700">Loading...</div>
+    </div>
+
+    <div id="course-instructors" class="bg-white p-6 rounded-lg shadow-md card-hover">
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Instructors</h2>
+        <div id="instructors-content" class="text-gray-700">Loading...</div>
+    </div>
+</div>
+
+<script>
+    const courseTitle = "{{ course_title }}";
+
+    function loadData(endpoint, elementId, renderFunction) {
+        const el = document.getElementById(elementId);
+        el.innerHTML = '<div class="spinner mx-auto"></div>';
+        fetch(endpoint)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => renderFunction(data, elementId))
+            .catch(err => {
+                document.getElementById(elementId).innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
+            });
+    }
+
+    function renderCourseInfo(data, id) {
+        const el = document.getElementById(id);
+        el.innerHTML = `
+            <p><strong>Description:</strong> ${data.description}</p>
+            <p><strong>Level:</strong> ${data.level}</p>
+            <p><strong>Credits:</strong> ${data.credits}</p>
+        `;
+    }
+
+    function renderSkills(skills, id) {
+        const el = document.getElementById(id);
+        if (skills.length === 0) {
+            el.innerHTML = '<p class="text-gray-500 italic">No skill requirements.</p>';
+            return;
+        }
+        let html = '<ul class="space-y-2">';
+        skills.forEach(s => {
+            html += `<li>${s.name} <span class="text-sm text-gray-500">(${s.category})</span> – Minimum proficiency: ${s.min_proficiency}/5</li>`;
+        });
+        html += '</ul>';
+        el.innerHTML = html;
+    }
+
+    function renderPrereqs(prereqs, id) {
+        const el = document.getElementById(id);
+        if (prereqs.length === 0) {
+            el.innerHTML = '<p class="text-gray-500 italic">No prerequisites.</p>';
+            return;
+        }
+        let html = '<ul class="space-y-2">';
+        prereqs.forEach(title => {
+            html += `<li><a href="/course/${encodeURIComponent(title)}" class="text-indigo-600 hover:underline">${title}</a></li>`;
+        });
+        html += '</ul>';
+        el.innerHTML = html;
+    }
+
+    function renderInstructors(instructors, id) {
+        const el = document.getElementById(id);
+        if (instructors.length === 0) {
+            el.innerHTML = '<p class="text-gray-500 italic">No instructors assigned.</p>';
+            return;
+        }
+        let html = '<ul class="space-y-2">';
+        instructors.forEach(i => {
+            html += `<li>${i.name} (${i.email})</li>`;
+        });
+        html += '</ul>';
+        el.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadData(`/api/course/${encodeURIComponent(courseTitle)}/info/`, 'info-content', renderCourseInfo);
+        loadData(`/api/course/${encodeURIComponent(courseTitle)}/skills/`, 'skills-content', renderSkills);
+        loadData(`/api/course/${encodeURIComponent(courseTitle)}/prerequisites/`, 'prereq-content', renderPrereqs);
+        loadData(`/api/course/${encodeURIComponent(courseTitle)}/instructors/`, 'instructors-content', renderInstructors);
+    });
+</script>
+{% endblock %}

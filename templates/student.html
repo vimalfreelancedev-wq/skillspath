@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">{{ student_name }}'s Dashboard</h1>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div id="profile" class="bg-white p-6 rounded-lg shadow-md card-hover">
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Profile</h2>
+        <div id="profile-content" class="text-gray-700">Loading...</div>
+    </div>
+
+    <div id="enrolled-courses" class="bg-white p-6 rounded-lg shadow-md card-hover">
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Enrolled Courses</h2>
+        <div id="courses-content" class="text-gray-700">Loading...</div>
+    </div>
+
+    <div id="skills" class="bg-white p-6 rounded-lg shadow-md card-hover">
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Skills & Proficiency</h2>
+        <div id="skills-content" class="text-gray-700">Loading...</div>
+    </div>
+
+    <div id="recommendations" class="bg-white p-6 rounded-lg shadow-md card-hover md:col-span-2">
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Recommendations</h2>
+        <div id="recommendations-content" class="text-gray-700">Loading...</div>
+    </div>
+</div>
+
+<script>
+    const studentName = "{{ student_name }}";
+
+    function loadData(endpoint, elementId, renderFunction) {
+        const el = document.getElementById(elementId);
+        el.innerHTML = '<div class="spinner mx-auto"></div>';
+        fetch(endpoint)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => renderFunction(data, elementId))
+            .catch(err => {
+                document.getElementById(elementId).innerHTML = `<p class="text-red-500">Error: ${err.message}</p>`;
+            });
+    }
+
+    function renderProfile(data, id) {
+        const el = document.getElementById(id);
+        el.innerHTML = `
+            <p><strong>Name:</strong> ${data.name}</p>
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>Enrolled Since:</strong> ${data.enrolled_since}</p>
+        `;
+    }
+
+    function renderCourses(courses, id) {
+        const el = document.getElementById(id);
+        if (courses.length === 0) {
+            el.innerHTML = '<p class="text-gray-500 italic">Not enrolled in any courses yet.</p>';
+            return;
+        }
+        let html = '<ul class="space-y-2">';
+        courses.forEach(c => {
+            html += `<li><a href="/course/${encodeURIComponent(c.title)}" class="text-indigo-600 hover:underline">${c.title}</a> <span class="text-sm text-gray-500">(${c.level})</span> – Enrolled: ${c.enrollment_date}</li>`;
+        });
+        html += '</ul>';
+        el.innerHTML = html;
+    }
+
+    function renderSkills(skills, id) {
+        const el = document.getElementById(id);
+        if (skills.length === 0) {
+            el.innerHTML = '<p class="text-gray-500 italic">No skills recorded.</p>';
+            return;
+        }
+        let html = '<ul class="space-y-2">';
+        skills.forEach(s => {
+            html += `<li>${s.name} <span class="text-sm text-gray-500">(${s.category})</span> – Proficiency: ${s.proficiency}/5</li>`;
+        });
+        html += '</ul>';
+        el.innerHTML = html;
+    }
+
+    function renderRecommendations(data, id) {
+        const el = document.getElementById(id);
+        let html = '';
+        if (data.eligible && data.eligible.length > 0) {
+            html += '<h3 class="font-semibold mt-4 mb-2">Eligible Courses</h3><ul class="space-y-2">';
+            data.eligible.forEach(c => {
+                html += `<li><a href="/course/${encodeURIComponent(c.title)}" class="text-indigo-600 hover:underline">${c.title}</a> <span class="text-sm text-gray-500">(${c.level})</span> – ${c.credits} credits</li>`;
+            });
+            html += '</ul>';
+        } else {
+            html += '<p class="text-gray-500 italic">No eligible courses found.</p>';
+        }
+
+        if (data.trending && data.trending.length > 0) {
+            html += '<h3 class="font-semibold mt-6 mb-2">Trending Among Peers</h3><ul class="space-y-2">';
+            data.trending.forEach(c => {
+                html += `<li><a href="/course/${encodeURIComponent(c.title)}" class="text-indigo-600 hover:underline">${c.title}</a> <span class="text-sm text-gray-500">(${c.level})</span> – recommended by ${c.peer_count} peers</li>`;
+            });
+            html += '</ul>';
+        } else {
+            html += '<p class="text-gray-500 italic">No trending courses found.</p>';
+        }
+        el.innerHTML = html;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadData(`/api/student/${encodeURIComponent(studentName)}/profile/`, 'profile-content', renderProfile);
+        loadData(`/api/student/${encodeURIComponent(studentName)}/courses/`, 'courses-content', renderCourses);
+        loadData(`/api/student/${encodeURIComponent(studentName)}/skills/`, 'skills-content', renderSkills);
+        loadData(`/api/student/${encodeURIComponent(studentName)}/recommendations/`, 'recommendations-content', renderRecommendations);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Search Results for "{{ skill }}"</h1>
+    {% if courses %}
+    <ul class="space-y-3">
+        {% for course in courses %}
+        <li class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <a href="{% url 'course_detail' course.title %}" class="text-indigo-600 font-medium hover:underline">{{ course.title }}</a>
+            <p class="text-gray-600 text-sm">{{ course.description }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-gray-500 italic">No courses found requiring skill "{{ skill }}".</p>
+    {% endif %}
+</div>
+{% endblock %}

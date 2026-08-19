@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-2xl font-bold mb-4">Courses taught by {{ instructor_name }}</h1>
+    {% if courses %}
+    <ul class="space-y-3">
+        {% for course in courses %}
+        <li class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+            <a href="{% url 'course_detail' course.title %}" class="text-indigo-600 font-medium hover:underline">{{ course.title }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-gray-500 italic">No courses found for this instructor.</p>
+    {% endif %}
+</div>
+{% endblock %}
