@@ -65,7 +65,8 @@ def api_student_profile(request, name):
         records = run_query(queries.GET_STUDENT_BY_NAME, {'name': name})
         if not records:
             return JsonResponse({'error': 'Student not found'}, status=404)
-        return JsonResponse(records[0])
+        print("records",records[0])
+        return JsonResponse(records[0],safe=False)
     except Exception as e:
         logger.error(f"Error fetching student profile: {e}")
         return JsonResponse({'error': 'Unable to fetch profile'}, status=500)
@@ -102,9 +103,10 @@ def api_student_recommendations(request, name):
 def api_course_info(request, title):
     try:
         records = run_query(queries.GET_COURSE_BY_TITLE, {'title': title})
+        print("records",records)
         if not records:
             return JsonResponse({'error': 'Course not found'}, status=404)
-        return JsonResponse(records[0])
+        return JsonResponse(records[0],safe=False)
     except Exception as e:
         logger.error(f"Error fetching course info: {e}")
         return JsonResponse({'error': 'Unable to fetch course info'}, status=500)
