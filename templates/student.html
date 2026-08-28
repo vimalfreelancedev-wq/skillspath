@@ -5,12 +5,12 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div id="profile" class="bg-white p-6 rounded-lg shadow-md card-hover">
         <h2 class="text-xl font-semibold border-b pb-2 mb-4">Profile</h2>
-        <div id="profile-content" class="text-gray-700">Loading...</div>
+        <div id="" class="text-gray-700">Loading...</div>
     </div>
 
     <div id="enrolled-courses" class="bg-white p-6 rounded-lg shadow-md card-hover">
         <h2 class="text-xl font-semibold border-b pb-2 mb-4">Enrolled Courses</h2>
-        <div id="courses-content" class="text-gray-700">Loading...</div>
+        <div id="" class="text-gray-700">Loading...</div>
     </div>
 
     <div id="skills" class="bg-white p-6 rounded-lg shadow-md card-hover">
@@ -41,14 +41,30 @@
             });
     }
 
-    function renderProfile(data, id) {
-        const el = document.getElementById(id);
+function renderProfile(data, id) {
+    const el = document.getElementById(id);
+
+    // Case 1: Data is an array (if backend accidentally returns a list)
+    if (Array.isArray(data)) {
         el.innerHTML = `
-            <p><strong>Name:</strong> ${data.name}</p>
-            <p><strong>Email:</strong> ${data.email}</p>
-            <p><strong>Enrolled Since:</strong> ${data.enrolled_since}</p>
+            <p><strong>Name:</strong> ${data[0] || 'Unknown'}</p>
+            <p><strong>Email:</strong> ${data[1] || 'Unknown'}</p>
+            <p><strong>Enrolled Since:</strong> ${data[2] || 'Unknown'}</p>
         `;
+        return;
     }
+
+    // Case 2: Data is a dict (expected). Fallback to alternative keys if aliasing fails.
+    const name = data.name || data['s.name'] || 'Unknown';
+    const email = data.email || data['s.email'] || 'Unknown';
+    const enrolled = data.enrolled_since || data['s.enrolled_since'] || 'Unknown';
+
+    el.innerHTML = `
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Enrolled Since:</strong> ${enrolled}</p>
+    `;
+}
 
     function renderCourses(courses, id) {
         const el = document.getElementById(id);
