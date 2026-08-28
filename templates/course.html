@@ -4,7 +4,7 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
     <div id="course-info" class="bg-white p-6 rounded-lg shadow-md card-hover">
-        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Course Details</h2>
+        <h2 class="text-xl font-semibold border-b pb-2 mb-4">Course Information</h2>
         <div id="info-content" class="text-gray-700">Loading...</div>
     </div>
 
@@ -25,13 +25,16 @@
 </div>
 
 <script>
-    const courseTitle = "{{ course_title }}";
+    const courseTitle = "{{ course_title|escapejs }}";
 
     function loadData(endpoint, elementId, renderFunction) {
         const el = document.getElementById(elementId);
+        console.log("el",el)
         el.innerHTML = '<div class="spinner mx-auto"></div>';
+        console.log("endpoint",endpoint)
         fetch(endpoint)
             .then(response => {
+                console.log("response",response)
                 if (!response.ok) throw new Error('Network response was not ok');
                 return response.json();
             })
@@ -41,18 +44,40 @@
             });
     }
 
-    function renderCourseInfo(data, id) {
-        const el = document.getElementById(id);
+function renderCourseInfo(data, id) {
+    const el = document.getElementById(id);
+
+    if (Array.isArray(data)) {
+        // Expecting order: [title, description, level, credits]
+        if (data.length === 0) {
+            el.innerHTML = '<p class="text-gray-500 italic">Course information not found.</p>';
+            return;
+        }
+        const description = data[1] || 'N/A';
+        const level = data[2] || 'N/A';
+        const credits = data[3] || 'N/A';
         el.innerHTML = `
-            <p><strong>Description:</strong> ${data.description}</p>
-            <p><strong>Level:</strong> ${data.level}</p>
-            <p><strong>Credits:</strong> ${data.credits}</p>
+            <p><strong>Description:</strong> ${description}</p>
+            <p><strong>Level:</strong> ${level}</p>
+            <p><strong>Credits:</strong> ${credits}</p>
         `;
+        return;
     }
+
+    const description = data.description || data['description'] || 'N/A';
+    const level = data.level || data['level'] || 'N/A';
+    const credits = data.credits || data['credits'] || 'N/A';
+
+    el.innerHTML = `
+        <p><strong>Description:</strong> ${description}</p>
+        <p><strong>Level:</strong> ${level}</p>
+        <p><strong>Credits:</strong> ${credits}</p>
+    `;
+}
 
     function renderSkills(skills, id) {
         const el = document.getElementById(id);
-        if (skills.length === 0) {
+        if (!skills || skills.length === 0) {
             el.innerHTML = '<p class="text-gray-500 italic">No skill requirements.</p>';
             return;
         }
@@ -66,13 +91,17 @@
 
     function renderPrereqs(prereqs, id) {
         const el = document.getElementById(id);
-        if (prereqs.length === 0) {
+        if (!prereqs || prereqs.length === 0) {
             el.innerHTML = '<p class="text-gray-500 italic">No prerequisites.</p>';
             return;
         }
         let html = '<ul class="space-y-2">';
-        prereqs.forEach(title => {
-            html += `<li><a href="/course/${encodeURIComponent(title)}" class="text-indigo-600 hover:underline">${title}</a></li>`;
+        prereqs.forEach(item => {
+            // item might be a string or an object with a "title" property
+            const title = typeof item === 'string' ? item : item.title;
+            if (title) {
+                html += `<li><a href="/course/${encodeURIComponent(title)}" class="text-indigo-600 hover:underline">${title}</a></li>`;
+            }
         });
         html += '</ul>';
         el.innerHTML = html;
@@ -80,7 +109,7 @@
 
     function renderInstructors(instructors, id) {
         const el = document.getElementById(id);
-        if (instructors.length === 0) {
+        if (!instructors || instructors.length === 0) {
             el.innerHTML = '<p class="text-gray-500 italic">No instructors assigned.</p>';
             return;
         }
