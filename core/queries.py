@@ -1,7 +1,4 @@
-"""
-Cypher query strings used by the application.
-All queries are parameterised – no string concatenation.
-"""
+
 
 # ---------- Basic Queries ----------
 
@@ -74,20 +71,15 @@ ELIGIBLE_COURSES = """
 MATCH (s:Student {name: $student_name})
 MATCH (c:Course)
 WHERE NOT (s)-[:ENROLLED_IN]->(c)
-  AND NOT EXISTS { (s)-[:ENROLLED_IN]->(c) }  -- explicit exclude
-  AND ALL(req IN [
-    (c)-[:REQUIRES]->(sk:Skill)
-    | { skill: sk.name, min: req.minimum_proficiency }
-  ] WHERE EXISTS {
-    (s)-[:HAS_SKILL]->(:Skill {name: req.skill})
-    AND (s)-[:HAS_SKILL]->(:Skill {name: req.skill})-[r:HAS_SKILL] WHERE r.proficiency >= req.min
-  })
-  AND ALL(prereq IN [
-    (c)<-[:PREREQUISITE_FOR]-(p:Course)
-    | p.title
-  ] WHERE EXISTS {
-    (s)-[:ENROLLED_IN]->(:Course {title: prereq})
-  })
+  AND ALL(req IN [(c)-[:REQUIRES]->(sk:Skill) | {skill: sk.name, min: req.minimum_proficiency}]
+         WHERE EXISTS {
+           MATCH (s)-[r:HAS_SKILL]->(sk2:Skill {name: req.skill})
+           WHERE r.proficiency >= req.min
+         })
+  AND ALL(prereq_title IN [(c)<-[:PREREQUISITE_FOR]-(p:Course) | p.title]
+          WHERE EXISTS {
+            MATCH (s)-[:ENROLLED_IN]->(pc:Course {title: prereq_title})
+          })
 RETURN c.title AS title, c.description AS description,
        c.level AS level, c.credits AS credits
 ORDER BY c.title
@@ -96,25 +88,20 @@ ORDER BY c.title
 # "Awkward for relational": trending courses among similar skill profiles
 TRENDING_COURSES = """
 MATCH (s:Student {name: $student_name})
-MATCH (s)-[:HAS_SKILL]->(skill:Skill)
-WHERE EXISTS { (s)-[:HAS_SKILL]->(skill) }  -- ensure skill exists
-WITH s, COLLECT(skill) AS student_skills
-MATCH (peer:Student)-[:HAS_SKILL]->(peer_skill:Skill)
+MATCH (s)-[r1:HAS_SKILL]->(skill:Skill)
+WHERE r1.proficiency >= 1
+WITH s, collect(skill) AS student_skills
+MATCH (peer:Student)-[r2:HAS_SKILL]->(shared_skill:Skill)
 WHERE peer <> s
-  AND peer_skill IN student_skills
-  AND (peer)-[:HAS_SKILL]->(peer_skill)-[:HAS_SKILL]->(peer_skill)  -- 1
-  -- Actually, we want peers that share at least 2 skills with proficiency >= 3
-  -- Let's rewrite simpler:
-MATCH (peer)-[:HAS_SKILL]->(shared_skill:Skill)
-WHERE shared_skill IN student_skills
-  AND (peer)-[:HAS_SKILL]->(shared_skill)-[r:HAS_SKILL] WHERE r.proficiency >= 3
-WITH peer, COUNT(DISTINCT shared_skill) AS overlap_count
+  AND shared_skill IN student_skills
+  AND r2.proficiency >= 3
+WITH peer, count(DISTINCT shared_skill) AS overlap_count
 WHERE overlap_count >= 2
 MATCH (peer)-[:ENROLLED_IN]->(course:Course)
 WHERE NOT (s)-[:ENROLLED_IN]->(course)
 RETURN course.title AS title, course.description AS description,
        course.level AS level, course.credits AS credits,
-       COUNT(DISTINCT peer) AS peer_count
+       count(DISTINCT peer) AS peer_count
 ORDER BY peer_count DESC, course.title
 LIMIT 10
 """
